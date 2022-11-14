@@ -56,7 +56,9 @@ public class FabricRepSystem implements ModInitializer {
             }
         });
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> writeRep(server));
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
             dispatcher.register(LiteralArgumentBuilder.<ServerCommandSource>literal("rep")
                 .then(LiteralArgumentBuilder.<ServerCommandSource>literal("view")
                     .executes(ctx -> repView(ctx, ctx.getSource().getPlayer()))
@@ -64,8 +66,7 @@ public class FabricRepSystem implements ModInitializer {
                         .executes(ctx -> repView(ctx, getPlayer(ctx, "player")))
                     )
                 )
-            );
-        });
+        ));
     }
 
     public static Path getReputationPath(MinecraftServer server) {
