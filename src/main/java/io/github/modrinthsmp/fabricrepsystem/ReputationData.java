@@ -11,4 +11,11 @@ public final class ReputationData {
         this.reputation = reputation;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "ReputationData{" +
+            "reputation=" + reputation +
+            '}';
+    }
 }
