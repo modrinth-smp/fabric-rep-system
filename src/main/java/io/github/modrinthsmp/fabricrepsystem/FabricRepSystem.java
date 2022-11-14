@@ -3,6 +3,7 @@ package io.github.modrinthsmp.fabricrepsystem;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -11,10 +12,10 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.command.EntitySelector;
+import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 
@@ -24,12 +25,12 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-import static net.minecraft.command.argument.EntityArgumentType.getPlayer;
-import static net.minecraft.command.argument.EntityArgumentType.player;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static net.minecraft.command.argument.GameProfileArgumentType.gameProfile;
+import static net.minecraft.command.argument.GameProfileArgumentType.getProfileArgument;
 
 public class FabricRepSystem implements ModInitializer {
     public static final Gson GSON = new GsonBuilder().create();
@@ -48,7 +49,7 @@ public class FabricRepSystem implements ModInitializer {
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             if (!reputation.containsKey(handler.getPlayer().getUuid())) {
-                reputation.put(handler.getPlayer().getUuid(), new ReputationData().setReputation(0));
+                reputation.put(handler.getPlayer().getUuid(), new ReputationData());
                 writeRep(server);
                 LOGGER.info("Added a reputation of zero for player with UUID: " + handler.getPlayer().getUuid());
             } else {
@@ -61,9 +62,30 @@ public class FabricRepSystem implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
             dispatcher.register(LiteralArgumentBuilder.<ServerCommandSource>literal("rep")
                 .then(LiteralArgumentBuilder.<ServerCommandSource>literal("view")
-                    .executes(ctx -> repView(ctx, ctx.getSource().getPlayer()))
-                    .then(RequiredArgumentBuilder.<ServerCommandSource, EntitySelector>argument("player", player())
-                        .executes(ctx -> repView(ctx, getPlayer(ctx, "player")))
+                    .executes(ctx -> repView(ctx, List.of(ctx.getSource().getPlayer().getGameProfile())))
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
+                        .executes(ctx -> repView(ctx, getProfileArgument(ctx, "player")))
+                    )
+                )
+                .then(LiteralArgumentBuilder.<ServerCommandSource>literal("set")
+                    .requires(source -> source.hasPermissionLevel(2))
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, Integer>argument("rep", integer())
+                        .executes(ctx -> repSet(ctx, List.of(ctx.getSource().getPlayer().getGameProfile())))
+                    )
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
+                        .then(RequiredArgumentBuilder.<ServerCommandSource, Integer>argument("rep", integer())
+                            .executes(ctx -> repSet(ctx, getProfileArgument(ctx, "player")))
+                        )
+                    )
+                )
+                .then(LiteralArgumentBuilder.<ServerCommandSource>literal("add")
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
+                        .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), +1))
+                    )
+                )
+                .then(LiteralArgumentBuilder.<ServerCommandSource>literal("remove")
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
+                        .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), -1))
                     )
                 )
         ));
@@ -73,8 +95,43 @@ public class FabricRepSystem implements ModInitializer {
         return server.getSavePath(WorldSavePath.ROOT).resolve("reputation.json");
     }
 
-    public static int repView(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity entity) {
-        return 1;
+    public static int repView(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles) {
+        int rep = 0;
+        for (final GameProfile profile : profiles) {
+            final ReputationData repData = reputation.get(profile.getId());
+            final int thisRep = repData == null ? 0 : repData.getReputation();
+            ctx.getSource().sendFeedback(
+                Text.of(profile.getName() + " has " + thisRep + " reputation."),
+                false
+            );
+            rep += thisRep;
+        }
+        return rep;
+    }
+
+    public static int repSet(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles) {
+        final int rep = getInteger(ctx, "rep");
+        for (final GameProfile profile : profiles) {
+            final ReputationData repData = reputation.computeIfAbsent(profile.getId(), key -> new ReputationData());
+            repData.setReputation(rep);
+            ctx.getSource().sendFeedback(
+                Text.of("Set " + profile.getName() + "'s reputation to " + rep + "."),
+                true
+            );
+        }
+        return profiles.size();
+    }
+
+    public static int repAdd(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles, int amount) {
+        for (final GameProfile profile : profiles) {
+            final ReputationData repData = reputation.computeIfAbsent(profile.getId(), key -> new ReputationData());
+            repData.addReputation(amount);
+            ctx.getSource().sendFeedback(
+                Text.of("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "."),
+                true
+            );
+        }
+        return profiles.size();
     }
 
     public static void writeRep(MinecraftServer server) {

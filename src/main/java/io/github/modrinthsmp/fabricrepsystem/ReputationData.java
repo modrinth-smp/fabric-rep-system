@@ -1,15 +1,18 @@
 package io.github.modrinthsmp.fabricrepsystem;
 
 public final class ReputationData {
-    private int reputation;
+    private int reputation = 0;
 
     public int getReputation() {
         return reputation;
     }
 
-    public ReputationData setReputation(int reputation) {
+    public void setReputation(int reputation) {
         this.reputation = reputation;
-        return this;
+    }
+
+    public void addReputation(int reputation) {
+        this.reputation += reputation;
     }
 
     @Override
