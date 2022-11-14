@@ -65,4 +65,12 @@ public final class RepUtils {
     public static Path getConfigPath() {
         return FabricLoader.getInstance().getConfigDir().resolve("fabric-rep-system.json5");
     }
+
+    public static ReputationConfig getConfig() {
+        return CONFIG;
+    }
+
+    public static ReputationData getPlayerReputation(UUID uuid) {
+        return FabricRepSystem.reputation.computeIfAbsent(uuid, key -> new ReputationData());
+    }
 }

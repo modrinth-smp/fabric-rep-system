@@ -4,6 +4,7 @@
   "package": "io.github.modrinthsmp.fabricrepsystem.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "ServerPlayerEntityMixin"
   ],
   "client": [
   ],

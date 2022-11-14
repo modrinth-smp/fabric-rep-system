@@ -5,8 +5,12 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 
 import java.util.Collection;
@@ -18,6 +22,16 @@ import static net.minecraft.command.argument.GameProfileArgumentType.gameProfile
 import static net.minecraft.command.argument.GameProfileArgumentType.getProfileArgument;
 
 public final class RepCommand {
+    private static final SimpleCommandExceptionType VOTE_YOURSELF_EXCEPTION = new SimpleCommandExceptionType(
+        Text.of("Cannot vote on yourself.")
+    );
+    private static final Dynamic2CommandExceptionType VOTE_FOR_AGAIN_EXCEPTION = new Dynamic2CommandExceptionType(
+        (player, whenInMillis) -> new LiteralText(
+            "You can vote for " + player + " again " +
+                Util.formatTimeDifference((long)whenInMillis)
+        )
+    );
+
     private RepCommand() {
     }
 
@@ -78,22 +92,39 @@ public final class RepCommand {
     private static int repSet(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles) {
         final int rep = getInteger(ctx, "rep");
         for (final GameProfile profile : profiles) {
-            final ReputationData repData = FabricRepSystem.reputation.computeIfAbsent(profile.getId(), key -> new ReputationData());
-            repData.setReputation(rep);
+            RepUtils.getPlayerReputation(profile.getId()).setReputation(rep);
             ctx.getSource().sendFeedback(
-                Text.of("Set " + profile.getName() + "'s reputation to " + rep + "."),
+                Text.of("Set " + profile.getName() + "'s reputation to " + rep),
                 true
             );
         }
         return profiles.size();
     }
 
-    private static int repAdd(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles, int amount) {
+    private static int repAdd(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles, int amount) throws CommandSyntaxException {
+        if (ctx.getSource().getEntity() != null) {
+            final long time = System.currentTimeMillis();
+            final ReputationData ownRepData = RepUtils.getPlayerReputation(ctx.getSource().getEntity().getUuid());
+            for (final GameProfile profile : profiles) {
+                if (profile.getId().equals(ctx.getSource().getEntity().getUuid())) {
+                    throw VOTE_YOURSELF_EXCEPTION.create();
+                }
+                final Long lastVotedFor = ownRepData.getLastVotedFor().get(profile.getId());
+                if (
+                    lastVotedFor != null &&
+                    lastVotedFor + RepUtils.getConfig().getCooldown() * 1000 > time
+                ) {
+                    throw VOTE_FOR_AGAIN_EXCEPTION.create(profile.getName(), RepUtils.getConfig().getCooldown() * 1000);
+                } else {
+                    ownRepData.getLastVotedFor().put(profile.getId(), time);
+                }
+            }
+        }
         for (final GameProfile profile : profiles) {
-            final ReputationData repData = FabricRepSystem.reputation.computeIfAbsent(profile.getId(), key -> new ReputationData());
+            final ReputationData repData = RepUtils.getPlayerReputation(profile.getId());
             repData.addReputation(amount);
             ctx.getSource().sendFeedback(
-                Text.of("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "."),
+                Text.of("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "!"),
                 true
             );
         }
