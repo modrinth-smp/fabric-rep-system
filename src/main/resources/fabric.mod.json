@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "fabric-rep-system",
+  "version": "${version}",
+  "name": "Fabric Reputation System",
+  "description": "",
+  "authors": [],
+  "contact": {
+    "repo": "https://github.com/modrinth-smp/fabric-rep-system"
+  },
+  "license": "MIT",
+  "icon": "assets/fabric-rep-system/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.modrinthsmp.fabricrepsystem.FabricRepSystem"
+    ]
+  },
+  "mixins": [
+    "fabric-rep-system.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.10",
+    "fabric": "*",
+    "minecraft": "1.18.2"
+  }
+}
