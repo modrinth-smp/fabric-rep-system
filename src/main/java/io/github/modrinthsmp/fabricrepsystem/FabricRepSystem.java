@@ -10,6 +10,7 @@ import com.mojang.logging.LogUtils;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -39,6 +40,15 @@ public class FabricRepSystem implements ModInitializer {
                 reputation = GSON.fromJson(reader, new TypeToken<Map<UUID, ReputationData>>() {}.getType());
             } catch (Exception e) {
                 LOGGER.error("Failed to load reputation", e);
+            }
+        });
+
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            if (!reputation.containsKey(handler.getPlayer().getUuid())) {
+                reputation.put(handler.getPlayer().getUuid(), new ReputationData().setReputation(0));
+                LOGGER.info("Added a reputation of zero for player with UUID: " + handler.getPlayer().getUuid());
+            } else {
+                LOGGER.info("Player with UUID: " + handler.getPlayer().getUuid() + ", joined with reputation: " + reputation.get(handler.getPlayer().getUuid()));
             }
         });
 

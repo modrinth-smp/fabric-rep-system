@@ -7,7 +7,8 @@ public final class ReputationData {
         return reputation;
     }
 
-    public void setReputation(int reputation) {
+    public ReputationData setReputation(int reputation) {
         this.reputation = reputation;
+        return this;
     }
 }
