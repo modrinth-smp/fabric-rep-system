@@ -9,6 +9,8 @@ import java.io.IOException;
 public final class ReputationConfig {
     private long cooldown = 24 * 60 * 60;
     private Integer minPvPRep = null;
+    private boolean upvoteNotifications = false;
+    private boolean downvoteNotifications = false;
 
     public long getCooldown() {
         return cooldown;
@@ -26,6 +28,22 @@ public final class ReputationConfig {
         minPvPRep = rep;
     }
 
+    public boolean isUpvoteNotifications() {
+        return upvoteNotifications;
+    }
+
+    public void setUpvoteNotifications(boolean upvoteNotifications) {
+        this.upvoteNotifications = upvoteNotifications;
+    }
+
+    public boolean isDownvoteNotifications() {
+        return downvoteNotifications;
+    }
+
+    public void setDownvoteNotifications(boolean downvoteNotifications) {
+        this.downvoteNotifications = downvoteNotifications;
+    }
+
     public void writeConfig(JsonWriter writer) throws IOException {
         writer.beginObject(); {
             writer.blockComment("""
@@ -33,11 +51,18 @@ public final class ReputationConfig {
                 `/rep set` is not affected by cooldown, but `/rep add` and `/rep remove` are.
                 """);
             writer.name("cooldown").value(cooldown);
+
             writer.blockComment("""
                 Minimum required reputation to PvP. Anything lower than this will not be able to hit another player.
                 Can be set to null to always allow PvP.
                 """);
             writer.name("minPvPRep").value(minPvPRep);
+
+            writer.blockComment("Notify the player when they get upvoted.");
+            writer.name("upvoteNotifications").value(upvoteNotifications);
+
+            writer.blockComment("Notify the player when they get downvoted.");
+            writer.name("downvoteNotifications").value(downvoteNotifications);
         } writer.endObject();
     }
 
@@ -55,6 +80,8 @@ public final class ReputationConfig {
                         minPvPRep = reader.nextInt();
                     }
                 }
+                case "upvoteNotifications" -> upvoteNotifications = reader.nextBoolean();
+                case "downvoteNotifications" -> downvoteNotifications = reader.nextBoolean();
                 default -> FabricRepSystem.LOGGER.warn("Unknown config key: " + key);
             }
         }

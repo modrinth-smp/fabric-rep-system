@@ -10,6 +10,8 @@ import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 
@@ -114,10 +116,11 @@ public final class RepCommand {
                     lastVotedFor != null &&
                     lastVotedFor + RepUtils.getConfig().getCooldown() * 1000 > time
                 ) {
-                    throw VOTE_FOR_AGAIN_EXCEPTION.create(profile.getName(), RepUtils.getConfig().getCooldown() * 1000);
-                } else {
-                    ownRepData.getLastVotedFor().put(profile.getId(), time);
+                    throw VOTE_FOR_AGAIN_EXCEPTION.create(profile.getName(), lastVotedFor + RepUtils.getConfig().getCooldown() * 1000 - System.currentTimeMillis());
                 }
+            }
+            for (final GameProfile profile : profiles) {
+                ownRepData.getLastVotedFor().put(profile.getId(), time);
             }
         }
         for (final GameProfile profile : profiles) {
@@ -127,6 +130,16 @@ public final class RepCommand {
                 Text.of("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "!"),
                 true
             );
+            final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
+            if (other != null) {
+                if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
+                    other.sendSystemMessage(Text.of("Your reputation was upvoted!"), net.minecraft.util.Util.NIL_UUID);
+                    other.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+                } else if (amount < 0 && RepUtils.getConfig().isDownvoteNotifications()) {
+                    other.sendSystemMessage(Text.of("Your reputation was downvoted."), net.minecraft.util.Util.NIL_UUID);
+                    other.playSound(SoundEvents.ENTITY_ZOMBIE_HURT, 1f, 1f);
+                }
+            }
         }
         return profiles.size();
     }
