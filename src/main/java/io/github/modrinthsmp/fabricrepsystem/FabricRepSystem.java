@@ -13,11 +13,14 @@ import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.WorldSavePath;
+import org.quiltmc.json5.JsonReader;
+import org.quiltmc.json5.JsonWriter;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -36,25 +39,26 @@ import static net.minecraft.command.argument.GameProfileArgumentType.getProfileA
 public class FabricRepSystem implements ModInitializer {
     public static final Gson GSON = new GsonBuilder().create();
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static final ReputationConfig CONFIG = new ReputationConfig();
     public static Map<UUID, ReputationData> reputation = new HashMap<>();
 
     @Override
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            try (final Reader reader = Files.newBufferedReader(getReputationPath(server), StandardCharsets.UTF_8)) {
-                reputation = GSON.fromJson(reader, new TypeToken<Map<UUID, ReputationData>>() {}.getType());
-            } catch (IOException e) {
-                LOGGER.error("Failed to load reputation", e);
-            }
+            readRep(server);
+            readConfig();
         });
 
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> writeConfig());
+
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            if (!reputation.containsKey(handler.getPlayer().getUuid())) {
-                reputation.put(handler.getPlayer().getUuid(), new ReputationData());
+            UUID uuid = handler.getPlayer().getUuid();
+            if (!reputation.containsKey(uuid)) {
+                reputation.put(uuid, new ReputationData());
                 writeRep(server);
-                LOGGER.info("Added a reputation of zero for player with UUID: " + handler.getPlayer().getUuid());
+                LOGGER.info("Added a reputation of zero for player with UUID: " + uuid);
             } else {
-                LOGGER.info("Player with UUID: " + handler.getPlayer().getUuid() + ", joined with reputation: " + reputation.get(handler.getPlayer().getUuid()));
+                LOGGER.info("Player with UUID: " + uuid + ", joined with reputation: " + reputation.get(uuid));
             }
         });
 
@@ -93,11 +97,56 @@ public class FabricRepSystem implements ModInitializer {
                         .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), -1))
                     )
                 )
+                .then(LiteralArgumentBuilder.<ServerCommandSource>literal("reload")
+                    .requires(source -> source.hasPermissionLevel(2))
+                    .executes(ctx -> {
+                        readConfig();
+                        ctx.getSource().sendFeedback(Text.of("Successfully reloaded reputation config"), true);
+                        return 1;
+                    })
+                )
         ));
+    }
+
+    public static void readRep(MinecraftServer server) {
+        try (final Reader reader = Files.newBufferedReader(getReputationPath(server), StandardCharsets.UTF_8)) {
+            reputation = GSON.fromJson(reader, new TypeToken<Map<UUID, ReputationData>>() {}.getType());
+        } catch (IOException e) {
+            LOGGER.error("Failed to load reputation", e);
+        }
+    }
+
+    public static void readConfig() {
+        try (final JsonReader reader = JsonReader.json5(getConfigPath())) {
+            CONFIG.readConfig(reader);
+        } catch (IOException e) {
+            LOGGER.error("Failed to load config", e);
+            writeConfig();
+        }
+    }
+
+    public static void writeRep(MinecraftServer server) {
+        try (final Writer writer = Files.newBufferedWriter(getReputationPath(server), StandardCharsets.UTF_8)) {
+            GSON.toJson(reputation, writer);
+        } catch (IOException e) {
+            LOGGER.error("Failed to write reputation", e);
+        }
+    }
+
+    public static void writeConfig() {
+        try (final JsonWriter writer = JsonWriter.json5(getConfigPath())) {
+            CONFIG.writeConfig(writer);
+        } catch (IOException e) {
+            LOGGER.error("Failed to save config", e);
+        }
     }
 
     public static Path getReputationPath(MinecraftServer server) {
         return server.getSavePath(WorldSavePath.ROOT).resolve("reputation.json");
+    }
+
+    public static Path getConfigPath() {
+        return FabricLoader.getInstance().getConfigDir().resolve("fabric-rep-system.json5");
     }
 
     public static int repView(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles) {
@@ -137,13 +186,5 @@ public class FabricRepSystem implements ModInitializer {
             );
         }
         return profiles.size();
-    }
-
-    public static void writeRep(MinecraftServer server) {
-        try (final Writer writer = Files.newBufferedWriter(getReputationPath(server), StandardCharsets.UTF_8)) {
-            GSON.toJson(reputation, writer);
-        } catch (IOException e) {
-            LOGGER.error("Failed to write reputation", e);
-        }
     }
 }
