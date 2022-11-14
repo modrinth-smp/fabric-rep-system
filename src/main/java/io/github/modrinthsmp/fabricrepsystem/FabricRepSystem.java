@@ -11,6 +11,7 @@ import com.mojang.logging.LogUtils;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.MinecraftServer;
@@ -58,6 +59,10 @@ public class FabricRepSystem implements ModInitializer {
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> writeRep(server));
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+
+        });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
             dispatcher.register(LiteralArgumentBuilder.<ServerCommandSource>literal("rep")
