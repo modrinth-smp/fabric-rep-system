@@ -9,8 +9,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -134,10 +136,24 @@ public final class RepCommand {
             if (other != null) {
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
                     other.sendSystemMessage(Text.of("Your reputation was upvoted!"), net.minecraft.util.Util.NIL_UUID);
-                    other.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+                    other.networkHandler.sendPacket(new PlaySoundS2CPacket(
+                        SoundEvents.ENTITY_PLAYER_LEVELUP,
+                        SoundCategory.MASTER,
+                        other.getX(),
+                        other.getY(),
+                        other.getZ(),
+                        0.5f, 1f
+                    ));
                 } else if (amount < 0 && RepUtils.getConfig().isDownvoteNotifications()) {
                     other.sendSystemMessage(Text.of("Your reputation was downvoted."), net.minecraft.util.Util.NIL_UUID);
-                    other.playSound(SoundEvents.ENTITY_ZOMBIE_HURT, 1f, 1f);
+                    other.networkHandler.sendPacket(new PlaySoundS2CPacket(
+                        SoundEvents.ENTITY_VILLAGER_NO,
+                        SoundCategory.MASTER,
+                        other.getX(),
+                        other.getY(),
+                        other.getZ(),
+                        1f, 1f
+                    ));
                 }
             }
         }
