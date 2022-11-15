@@ -75,7 +75,7 @@ public final class ReputationConfig {
         writer.beginObject(); {
             writer.blockComment("""
                 Cooldown time is in seconds.
-                `/rep set` is not affected by cooldown, but `/rep add` and `/rep remove` are.
+                `/rep set` is not affected by cooldown, but `/rep upvote` and `/rep downvote` are.
                 """);
             writer.name("cooldown").value(cooldown);
 

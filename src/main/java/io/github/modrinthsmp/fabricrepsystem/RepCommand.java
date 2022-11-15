@@ -43,7 +43,7 @@ public final class RepCommand {
     private static final DynamicCommandExceptionType LOOK_FOR_UNWANTED_EXCEPTION = new DynamicCommandExceptionType(
             (player) -> new LiteralText(
                     ((ServerPlayerEntity)player).getName() +
-                            " is currently unwanted."
+                            " is currently not wanted."
             )
     );
 
