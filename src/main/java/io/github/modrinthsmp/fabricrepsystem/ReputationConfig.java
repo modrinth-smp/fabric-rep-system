@@ -11,6 +11,7 @@ public final class ReputationConfig {
     private Integer minPvPRep = null;
     private Integer minSpawnBuildingRep = null;
     private Integer maxWantedRep = null;
+    private boolean votingReasonRequired = false;
     private boolean upvoteNotifications = false;
     private boolean downvoteNotifications = false;
 
@@ -44,6 +45,14 @@ public final class ReputationConfig {
 
     public void setMaxWantedRep(Integer maxWantedRep) {
         this.maxWantedRep = maxWantedRep;
+    }
+
+    public boolean isVotingReasonRequired() {
+        return votingReasonRequired;
+    }
+
+    public void setVotingReasonRequired(boolean required) {
+        this.votingReasonRequired = required;
     }
 
     public boolean isUpvoteNotifications() {
@@ -88,6 +97,9 @@ public final class ReputationConfig {
                     """);
             writer.name("maxWantedRep").value(maxWantedRep);
 
+            writer.blockComment("Require a reason to vote on a player.");
+            writer.name("votingReasonRequired").value(votingReasonRequired);
+
             writer.blockComment("Notify the player when they get upvoted.");
             writer.name("upvoteNotifications").value(upvoteNotifications);
 
@@ -126,6 +138,7 @@ public final class ReputationConfig {
                         maxWantedRep = reader.nextInt();
                     }
                 }
+                case "votingReasonRequired" -> votingReasonRequired = reader.nextBoolean();
                 case "upvoteNotifications" -> upvoteNotifications = reader.nextBoolean();
                 case "downvoteNotifications" -> downvoteNotifications = reader.nextBoolean();
                 default -> FabricRepSystem.LOGGER.warn("Unknown config key: " + key);

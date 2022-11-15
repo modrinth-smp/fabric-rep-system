@@ -2,6 +2,7 @@ package io.github.modrinthsmp.fabricrepsystem;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -11,6 +12,7 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -23,6 +25,7 @@ import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static com.mojang.brigadier.arguments.StringArgumentType.string;
 import static net.minecraft.command.argument.EntityArgumentType.*;
 import static net.minecraft.command.argument.GameProfileArgumentType.gameProfile;
 import static net.minecraft.command.argument.GameProfileArgumentType.getProfileArgument;
@@ -68,7 +71,8 @@ public final class RepCommand {
             )
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("upvote")
                 .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
-                    .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), +1))
+                        .then(voteConfigReader())
+                            .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), +1))
                 )
             )
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("downvote")
@@ -89,6 +93,13 @@ public final class RepCommand {
                     .executes(ctx -> getWanted(ctx, getPlayer(ctx, "player")))
             )
         );
+    }
+
+    private static ArgumentBuilder<ServerCommandSource,?> voteConfigReader() {
+        if (RepUtils.getConfig().isVotingReasonRequired()) {
+            return RequiredArgumentBuilder.argument("reason", string());
+        }
+        return CommandManager.argument("reason", string());
     }
 
     private static int getWanted(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) throws CommandSyntaxException {
@@ -153,12 +164,14 @@ public final class RepCommand {
             repData.addReputation(amount);
             ctx.getSource().sendFeedback(
                 Text.of("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "!"),
-                true
+                false
             );
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
+                String reason = ctx.getArgument("reason", String.class);
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
-                    other.sendSystemMessage(Text.of("Your reputation was upvoted!"), net.minecraft.util.Util.NIL_UUID);
+                    other.sendSystemMessage(Text.of("Your reputation was upvoted!\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
+                    FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was upvoted with reason: " + (reason == null ? "None Provided" : reason));
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
                         SoundEvents.ENTITY_PLAYER_LEVELUP,
                         SoundCategory.MASTER,
@@ -168,7 +181,8 @@ public final class RepCommand {
                         0.5f, 1f
                     ));
                 } else if (amount < 0 && RepUtils.getConfig().isDownvoteNotifications()) {
-                    other.sendSystemMessage(Text.of("Your reputation was downvoted."), net.minecraft.util.Util.NIL_UUID);
+                    other.sendSystemMessage(Text.of("Your reputation was downvoted.\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
+                    FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was downvoted with reason: " + (reason == null ? "None Provided" : reason));
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
                         SoundEvents.ENTITY_VILLAGER_NO,
                         SoundCategory.MASTER,
