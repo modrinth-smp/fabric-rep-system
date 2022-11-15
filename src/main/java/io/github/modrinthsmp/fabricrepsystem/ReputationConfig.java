@@ -9,6 +9,7 @@ import java.io.IOException;
 public final class ReputationConfig {
     private long cooldown = 24 * 60 * 60;
     private Integer minPvPRep = null;
+    private Integer minSpawnBuildingRep = null;
     private boolean upvoteNotifications = false;
     private boolean downvoteNotifications = false;
 
@@ -26,6 +27,14 @@ public final class ReputationConfig {
 
     public void setMinPvPRep(Integer rep) {
         minPvPRep = rep;
+    }
+
+    public Integer getMinSpawnBuildingRep() {
+        return minSpawnBuildingRep;
+    }
+
+    public void setMinSpawnBuildingRep(Integer minSpawnBuildingRep) {
+        this.minSpawnBuildingRep = minSpawnBuildingRep;
     }
 
     public boolean isUpvoteNotifications() {
@@ -58,6 +67,12 @@ public final class ReputationConfig {
                 """);
             writer.name("minPvPRep").value(minPvPRep);
 
+            writer.blockComment("""
+                    Minimum required reputation to modify within the range of spawn protection.
+                    Can be set to null to always disallow modification.
+                    """);
+            writer.name("minSpawnBuildingRep").value(minSpawnBuildingRep);
+
             writer.blockComment("Notify the player when they get upvoted.");
             writer.name("upvoteNotifications").value(upvoteNotifications);
 
@@ -78,6 +93,14 @@ public final class ReputationConfig {
                         minPvPRep = null;
                     } else {
                         minPvPRep = reader.nextInt();
+                    }
+                }
+                case "minSpawnBuildingRep" -> {
+                    if (reader.peek() == JsonToken.NULL) {
+                        reader.nextNull();
+                        minSpawnBuildingRep = null;
+                    } else {
+                        minSpawnBuildingRep = reader.nextInt();
                     }
                 }
                 case "upvoteNotifications" -> upvoteNotifications = reader.nextBoolean();
