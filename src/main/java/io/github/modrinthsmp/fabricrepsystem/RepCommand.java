@@ -2,7 +2,6 @@ package io.github.modrinthsmp.fabricrepsystem;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -12,7 +11,6 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -25,7 +23,8 @@ import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static com.mojang.brigadier.arguments.StringArgumentType.string;
+import static com.mojang.brigadier.arguments.StringArgumentType.getString;
+import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 import static net.minecraft.command.argument.EntityArgumentType.*;
 import static net.minecraft.command.argument.GameProfileArgumentType.gameProfile;
 import static net.minecraft.command.argument.GameProfileArgumentType.getProfileArgument;
@@ -45,6 +44,9 @@ public final class RepCommand {
                     ((ServerPlayerEntity)player).getName() +
                             " is currently not wanted."
             )
+    );
+    private static final SimpleCommandExceptionType REASON_REQUIRED_EXCEPTION = new SimpleCommandExceptionType(
+        Text.of("A reason is required, but you didn't specify one.")
     );
 
     private RepCommand() {
@@ -71,13 +73,18 @@ public final class RepCommand {
             )
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("upvote")
                 .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
-                        .then(voteConfigReader())
-                            .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), +1))
+                    .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), +1, null))
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, String>argument("reason", greedyString())
+                        .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), +1, getString(ctx, "reason")))
+                    )
                 )
             )
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("downvote")
                 .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
-                    .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), -1))
+                    .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), -1, null))
+                    .then(RequiredArgumentBuilder.<ServerCommandSource, String>argument("reason", greedyString())
+                        .executes(ctx -> repAdd(ctx, getProfileArgument(ctx, "player"), -1, getString(ctx, "reason")))
+                    )
                 )
             )
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("reload")
@@ -93,13 +100,6 @@ public final class RepCommand {
                     .executes(ctx -> getWanted(ctx, getPlayer(ctx, "player")))
             )
         );
-    }
-
-    private static ArgumentBuilder<ServerCommandSource,?> voteConfigReader() {
-        if (RepUtils.getConfig().isVotingReasonRequired()) {
-            return RequiredArgumentBuilder.argument("reason", string());
-        }
-        return CommandManager.argument("reason", string());
     }
 
     private static int getWanted(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) throws CommandSyntaxException {
@@ -139,7 +139,10 @@ public final class RepCommand {
         return profiles.size();
     }
 
-    private static int repAdd(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles, int amount) throws CommandSyntaxException {
+    private static int repAdd(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles, int amount, String reason) throws CommandSyntaxException {
+        if (RepUtils.getConfig().isVotingReasonRequired() && reason == null) {
+            throw REASON_REQUIRED_EXCEPTION.create();
+        }
         if (ctx.getSource().getEntity() != null) {
             final long time = System.currentTimeMillis();
             final ReputationData ownRepData = RepUtils.getPlayerReputation(ctx.getSource().getEntity().getUuid());
@@ -168,7 +171,6 @@ public final class RepCommand {
             );
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
-                String reason = ctx.getArgument("reason", String.class);
                 FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was " + (amount > 0 ? "upvoted" : "downvoted") + " with reason: " + (reason == null ? "None Provided" : reason));
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
                     other.sendSystemMessage(Text.of("Your reputation was upvoted!\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);

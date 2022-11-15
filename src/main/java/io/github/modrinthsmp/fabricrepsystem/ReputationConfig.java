@@ -19,56 +19,28 @@ public final class ReputationConfig {
         return cooldown;
     }
 
-    public void setCooldown(long cooldown) {
-        this.cooldown = cooldown;
-    }
-
     public Integer getMinPvPRep() {
         return minPvPRep;
-    }
-
-    public void setMinPvPRep(Integer rep) {
-        minPvPRep = rep;
     }
 
     public Integer getMinSpawnBuildingRep() {
         return minSpawnBuildingRep;
     }
 
-    public void setMinSpawnBuildingRep(Integer minSpawnBuildingRep) {
-        this.minSpawnBuildingRep = minSpawnBuildingRep;
-    }
-
     public Integer getMaxWantedRep() {
         return maxWantedRep;
-    }
-
-    public void setMaxWantedRep(Integer maxWantedRep) {
-        this.maxWantedRep = maxWantedRep;
     }
 
     public boolean isVotingReasonRequired() {
         return votingReasonRequired;
     }
 
-    public void setVotingReasonRequired(boolean required) {
-        this.votingReasonRequired = required;
-    }
-
     public boolean isUpvoteNotifications() {
         return upvoteNotifications;
     }
 
-    public void setUpvoteNotifications(boolean upvoteNotifications) {
-        this.upvoteNotifications = upvoteNotifications;
-    }
-
     public boolean isDownvoteNotifications() {
         return downvoteNotifications;
-    }
-
-    public void setDownvoteNotifications(boolean downvoteNotifications) {
-        this.downvoteNotifications = downvoteNotifications;
     }
 
     public void writeConfig(JsonWriter writer) throws IOException {
@@ -97,13 +69,13 @@ public final class ReputationConfig {
                     """);
             writer.name("maxWantedRep").value(maxWantedRep);
 
-            writer.blockComment("Require a reason to vote on a player.");
+            writer.comment("Require a reason to vote on a player.");
             writer.name("votingReasonRequired").value(votingReasonRequired);
 
-            writer.blockComment("Notify the player when they get upvoted.");
+            writer.comment("Notify the player when they get upvoted.");
             writer.name("upvoteNotifications").value(upvoteNotifications);
 
-            writer.blockComment("Notify the player when they get downvoted.");
+            writer.comment("Notify the player when they get downvoted.");
             writer.name("downvoteNotifications").value(downvoteNotifications);
         } writer.endObject();
     }
