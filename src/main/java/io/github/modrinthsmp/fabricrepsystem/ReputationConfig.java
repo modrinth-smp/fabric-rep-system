@@ -10,6 +10,7 @@ public final class ReputationConfig {
     private long cooldown = 24 * 60 * 60;
     private Integer minPvPRep = null;
     private Integer minSpawnBuildingRep = null;
+    private Integer maxWantedRep = null;
     private boolean upvoteNotifications = false;
     private boolean downvoteNotifications = false;
 
@@ -35,6 +36,14 @@ public final class ReputationConfig {
 
     public void setMinSpawnBuildingRep(Integer minSpawnBuildingRep) {
         this.minSpawnBuildingRep = minSpawnBuildingRep;
+    }
+
+    public Integer getMaxWantedRep() {
+        return maxWantedRep;
+    }
+
+    public void setMaxWantedRep(Integer maxWantedRep) {
+        this.maxWantedRep = maxWantedRep;
     }
 
     public boolean isUpvoteNotifications() {
@@ -73,6 +82,12 @@ public final class ReputationConfig {
                     """);
             writer.name("minSpawnBuildingRep").value(minSpawnBuildingRep);
 
+            writer.blockComment("""
+                    Maximum required reputation to be wanted (have co-ords shown).
+                    Can be set to null to not allow anyone to be wanted.
+                    """);
+            writer.name("maxWantedRep").value(maxWantedRep);
+
             writer.blockComment("Notify the player when they get upvoted.");
             writer.name("upvoteNotifications").value(upvoteNotifications);
 
@@ -101,6 +116,14 @@ public final class ReputationConfig {
                         minSpawnBuildingRep = null;
                     } else {
                         minSpawnBuildingRep = reader.nextInt();
+                    }
+                }
+                case "maxWantedRep" -> {
+                    if (reader.peek() == JsonToken.NULL) {
+                        reader.nextNull();
+                        maxWantedRep = null;
+                    } else {
+                        maxWantedRep = reader.nextInt();
                     }
                 }
                 case "upvoteNotifications" -> upvoteNotifications = reader.nextBoolean();

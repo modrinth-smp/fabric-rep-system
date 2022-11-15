@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static net.minecraft.command.argument.EntityArgumentType.*;
 import static net.minecraft.command.argument.GameProfileArgumentType.gameProfile;
 import static net.minecraft.command.argument.GameProfileArgumentType.getProfileArgument;
 
@@ -34,6 +36,12 @@ public final class RepCommand {
             "You can vote for " + player + " again " +
                 Util.formatTimeDifference((long)whenInMillis)
         )
+    );
+    private static final DynamicCommandExceptionType LOOK_FOR_UNWANTED_EXCEPTION = new DynamicCommandExceptionType(
+            (player) -> new LiteralText(
+                    ((ServerPlayerEntity)player).getName() +
+                            " is currently unwanted."
+            )
     );
 
     private RepCommand() {
@@ -76,7 +84,22 @@ public final class RepCommand {
                     return 1;
                 })
             )
+            .then(LiteralArgumentBuilder.<ServerCommandSource>literal("wanted")
+                    .then(RequiredArgumentBuilder.argument("player", player()))
+                    .executes(ctx -> getWanted(ctx, getPlayer(ctx, "player")))
+            )
         );
+    }
+
+    private static int getWanted(CommandContext<ServerCommandSource> ctx, ServerPlayerEntity player) throws CommandSyntaxException {
+        if (RepUtils.getConfig().getMaxWantedRep() == null)
+            throw NOT_ALLOWED_EXCEPTION.create();
+        if (FabricRepSystem.reputation.get(player.getUuid()).getReputation() > RepUtils.getConfig().getMaxWantedRep())
+            throw LOOK_FOR_UNWANTED_EXCEPTION.create(player);
+        ctx.getSource().sendFeedback(
+                Text.of(player.getPos().toString()), false
+        );
+        return 0;
     }
 
     private static int repView(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles) {
