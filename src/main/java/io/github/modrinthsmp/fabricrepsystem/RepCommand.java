@@ -169,9 +169,9 @@ public final class RepCommand {
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
                 String reason = ctx.getArgument("reason", String.class);
+                FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was " + (amount > 0 ? "upvoted" : "downvoted") + " with reason: " + (reason == null ? "None Provided" : reason));
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
                     other.sendSystemMessage(Text.of("Your reputation was upvoted!\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
-                    FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was upvoted with reason: " + (reason == null ? "None Provided" : reason));
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
                         SoundEvents.ENTITY_PLAYER_LEVELUP,
                         SoundCategory.MASTER,
@@ -182,7 +182,6 @@ public final class RepCommand {
                     ));
                 } else if (amount < 0 && RepUtils.getConfig().isDownvoteNotifications()) {
                     other.sendSystemMessage(Text.of("Your reputation was downvoted.\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
-                    FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was downvoted with reason: " + (reason == null ? "None Provided" : reason));
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
                         SoundEvents.ENTITY_VILLAGER_NO,
                         SoundCategory.MASTER,
