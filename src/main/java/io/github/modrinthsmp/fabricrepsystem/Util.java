@@ -12,30 +12,30 @@ public final class Util {
     public static String formatTimeDifferenceSimple(long difference) {
         if (difference < 60 * 1000) {
             if (difference / 1000 == 1) {
-                return "1 second";
+                return "a second";
             }
             return difference / 1000 + " seconds";
         }
         if (difference < 60 * 60 * 1000) {
             if (difference / (60 * 1000) == 1) {
-                return "1 minute";
+                return "a minute";
             }
             return difference / (60 * 1000) + " minutes";
         }
         if (difference < 24 * 60 * 60 * 1000) {
             if (difference / (60 * 60 * 1000) == 1) {
-                return "1 hour";
+                return "an hour";
             }
             return difference / (60 * 60 * 1000) + " hours";
         }
         if (difference < 365 * 24 * 60 * 60 * 1000L) {
             if (difference / (24 * 60 * 60 * 1000) == 1) {
-                return "1 day";
+                return "a day";
             }
             return difference / (24 * 60 * 60 * 1000) + " days";
         }
         if (difference / (365 * 24 * 60 * 60 * 1000L) == 1) {
-            return "1 year";
+            return "a year";
         }
         return difference / (365 * 24 * 60 * 60 * 1000L) + " years";
     }

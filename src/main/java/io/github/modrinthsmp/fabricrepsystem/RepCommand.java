@@ -9,6 +9,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.server.command.ServerCommandSource;
@@ -96,8 +97,9 @@ public final class RepCommand {
                 })
             )
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("wanted")
-                    .then(RequiredArgumentBuilder.argument("player", player()))
+                .then(RequiredArgumentBuilder.<ServerCommandSource, EntitySelector>argument("player", player())
                     .executes(ctx -> getWanted(ctx, getPlayer(ctx, "player")))
+                )
             )
         );
     }
@@ -171,7 +173,7 @@ public final class RepCommand {
             );
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
-                FabricRepSystem.LOGGER.info(other.getUuidAsString() + "was " + (amount > 0 ? "upvoted" : "downvoted") + " with reason: " + (reason == null ? "None Provided" : reason));
+                FabricRepSystem.LOGGER.info(ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + other.getName().getString() + " with reason: " + (reason == null ? "None Provided" : reason));
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
                     other.sendSystemMessage(Text.of("Your reputation was upvoted!\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
