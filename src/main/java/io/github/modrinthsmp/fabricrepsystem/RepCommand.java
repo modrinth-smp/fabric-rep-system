@@ -17,6 +17,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 import java.util.Collection;
@@ -172,7 +173,11 @@ public final class RepCommand {
             if (other != null) {
                 FabricRepSystem.LOGGER.info(ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + other.getName().getString() + " with reason: " + (reason == null ? "None Provided" : reason));
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
-                    other.sendSystemMessage(Text.of("Your reputation was upvoted!\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
+                    MutableText text = new LiteralText("Your reputation was upvoted!");
+                    if (RepUtils.getConfig().isShowReason()) {
+                        text = text.append("Reason: " + (reason == null ? "None Provided" : reason));
+                    }
+                    other.sendSystemMessage(text, net.minecraft.util.Util.NIL_UUID);
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
                         SoundEvents.ENTITY_PLAYER_LEVELUP,
                         SoundCategory.MASTER,
@@ -182,7 +187,11 @@ public final class RepCommand {
                         0.5f, 1f
                     ));
                 } else if (amount < 0 && RepUtils.getConfig().isDownvoteNotifications()) {
-                    other.sendSystemMessage(Text.of("Your reputation was downvoted.\nReason: " + (reason == null ? "None Provided" : reason)), net.minecraft.util.Util.NIL_UUID);
+                    MutableText text = new LiteralText("Your reputation was downvoted.");
+                    if (RepUtils.getConfig().isShowReason()) {
+                        text = text.append("Reason: " + (reason == null ? "None Provided" : reason));
+                    }
+                    other.sendSystemMessage(text, net.minecraft.util.Util.NIL_UUID);
                     other.networkHandler.sendPacket(new PlaySoundS2CPacket(
                         SoundEvents.ENTITY_VILLAGER_NO,
                         SoundCategory.MASTER,
