@@ -173,22 +173,26 @@ public final class RepCommand {
                 Text.of("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "!"),
                 false
             );
+            FabricRepSystem.LOGGER.info(ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + profile.getName() + " with reason: " + (reason == null ? "None Provided" : reason));
+            if (RepUtils.getWebhookClient() != null) {
+                RepUtils.getWebhookClient().send(
+                    new WebhookEmbedBuilder()
+                        .setColor(amount > 0 ? Formatting.GREEN.getColorValue() : Formatting.RED.getColorValue())
+                        .setTitle(new WebhookEmbed.EmbedTitle(
+                            ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + profile.getName(),
+                            null
+                        ))
+                        .setDescription(reason)
+                        .setFooter(new WebhookEmbed.EmbedFooter(
+                            profile.getName() + "'s reputation is now " + repData.getReputation(),
+                            "https://crafatar.com/renders/head/" + profile.getId() + "?overlay=true"
+                        ))
+                        .setTimestamp(Instant.now())
+                        .build()
+                );
+            }
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
-                FabricRepSystem.LOGGER.info(ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + other.getName().getString() + " with reason: " + (reason == null ? "None Provided" : reason));
-                if (RepUtils.getWebhookClient() != null) {
-                    RepUtils.getWebhookClient().send(
-                        new WebhookEmbedBuilder()
-                            .setColor(amount > 0 ? Formatting.GREEN.getColorValue() : Formatting.RED.getColorValue())
-                            .setTitle(new WebhookEmbed.EmbedTitle(
-                                ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + other.getName().getString(),
-                                null
-                            ))
-                            .setDescription(reason)
-                            .setTimestamp(Instant.now())
-                            .build()
-                    );
-                }
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
                     MutableText text = new LiteralText("Your reputation was upvoted!");
                     if (RepUtils.getConfig().isShowReason()) {
