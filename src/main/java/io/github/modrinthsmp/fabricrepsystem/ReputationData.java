@@ -15,11 +15,19 @@ public final class ReputationData {
     }
 
     public void setReputation(int reputation) {
+        final ReputationConfig config = RepUtils.getConfig();
+        final Integer minRep = config.getMinRep();
+        final Integer maxRep = config.getMaxRep();
+        if (minRep != null && reputation < minRep) {
+            reputation = minRep;
+        } else if (maxRep != null && reputation > maxRep) {
+            reputation = maxRep;
+        }
         this.reputation = reputation;
     }
 
     public void addReputation(int reputation) {
-        this.reputation += reputation;
+        setReputation(this.reputation + reputation);
     }
 
     public Map<UUID, Long> getLastVotedFor() {

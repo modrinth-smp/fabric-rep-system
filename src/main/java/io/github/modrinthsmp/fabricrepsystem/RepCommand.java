@@ -134,9 +134,10 @@ public final class RepCommand {
     private static int repSet(CommandContext<ServerCommandSource> ctx, Collection<GameProfile> profiles) {
         final int rep = getInteger(ctx, "rep");
         for (final GameProfile profile : profiles) {
-            RepUtils.getPlayerReputation(profile.getId()).setReputation(rep);
+            final ReputationData repData = RepUtils.getPlayerReputation(profile.getId());
+            repData.setReputation(rep);
             ctx.getSource().sendFeedback(
-                Text.of("Set " + profile.getName() + "'s reputation to " + rep),
+                Text.of("Set " + profile.getName() + "'s reputation to " + repData.getReputation()),
                 true
             );
         }

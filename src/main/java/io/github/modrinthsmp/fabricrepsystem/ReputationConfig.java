@@ -12,6 +12,10 @@ import java.net.URL;
 public final class ReputationConfig {
     private long cooldown = 24 * 60 * 60;
     @Nullable
+    private Integer minRep = null;
+    @Nullable
+    private Integer maxRep = null;
+    @Nullable
     private Integer minPvPRep = null;
     @Nullable
     private Integer minSpawnBuildingRep = null;
@@ -26,6 +30,16 @@ public final class ReputationConfig {
 
     public long getCooldown() {
         return cooldown;
+    }
+
+    @Nullable
+    public Integer getMinRep() {
+        return minRep;
+    }
+
+    @Nullable
+    public Integer getMaxRep() {
+        return maxRep;
     }
 
     @Nullable
@@ -73,6 +87,13 @@ public final class ReputationConfig {
             writer.name("cooldown").value(cooldown);
 
             writer.blockComment("""
+                The minimum and maximum reputation.
+                All reputation changes will clamp between these values.
+                """);
+            writer.name("minRep").value(minRep);
+            writer.name("maxRep").value(maxRep);
+
+            writer.blockComment("""
                 Minimum required reputation to PvP. Anything lower than this will not be able to hit another player.
                 Can be set to null to always allow PvP.
                 """);
@@ -113,30 +134,11 @@ public final class ReputationConfig {
             final String key;
             switch (key = reader.nextName()) {
                 case "cooldown" -> cooldown = reader.nextLong();
-                case "minPvPRep" -> {
-                    if (reader.peek() == JsonToken.NULL) {
-                        reader.nextNull();
-                        minPvPRep = null;
-                    } else {
-                        minPvPRep = reader.nextInt();
-                    }
-                }
-                case "minSpawnBuildingRep" -> {
-                    if (reader.peek() == JsonToken.NULL) {
-                        reader.nextNull();
-                        minSpawnBuildingRep = null;
-                    } else {
-                        minSpawnBuildingRep = reader.nextInt();
-                    }
-                }
-                case "maxWantedRep" -> {
-                    if (reader.peek() == JsonToken.NULL) {
-                        reader.nextNull();
-                        maxWantedRep = null;
-                    } else {
-                        maxWantedRep = reader.nextInt();
-                    }
-                }
+                case "minRep" -> minRep = nextNullableInt(reader);
+                case "maxRep" -> maxRep = nextNullableInt(reader);
+                case "minPvPRep" -> minPvPRep = nextNullableInt(reader);
+                case "minSpawnBuildingRep" -> minSpawnBuildingRep = nextNullableInt(reader);
+                case "maxWantedRep" -> maxWantedRep = nextNullableInt(reader);
                 case "votingReasonRequired" -> votingReasonRequired = reader.nextBoolean();
                 case "showReason" -> showReason = reader.nextBoolean();
                 case "upvoteNotifications" -> upvoteNotifications = reader.nextBoolean();
@@ -158,5 +160,15 @@ public final class ReputationConfig {
             }
         }
         reader.endObject();
+    }
+
+    @Nullable
+    private static Integer nextNullableInt(JsonReader reader) throws IOException {
+        if (reader.peek() == JsonToken.NULL) {
+            reader.nextNull();
+            return null;
+        } else {
+            return reader.nextInt();
+        }
     }
 }
