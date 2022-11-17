@@ -1,5 +1,7 @@
 package io.github.modrinthsmp.fabricrepsystem;
 
+import club.minnced.discord.webhook.send.WebhookEmbed;
+import club.minnced.discord.webhook.send.WebhookEmbedBuilder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -19,7 +21,9 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -147,7 +151,7 @@ public final class RepCommand {
             final long time = System.currentTimeMillis();
             final ReputationData ownRepData = RepUtils.getPlayerReputation(ctx.getSource().getEntity().getUuid());
             for (final GameProfile profile : profiles) {
-                if (profile.getId().equals(ctx.getSource().getEntity().getUuid())) {
+                if (!ctx.getSource().hasPermissionLevel(2) && profile.getId().equals(ctx.getSource().getEntity().getUuid())) {
                     throw VOTE_YOURSELF_EXCEPTION.create();
                 }
                 final Long lastVotedFor = ownRepData.getLastVotedFor().get(profile.getId());
@@ -172,6 +176,19 @@ public final class RepCommand {
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
                 FabricRepSystem.LOGGER.info(ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + other.getName().getString() + " with reason: " + (reason == null ? "None Provided" : reason));
+                if (RepUtils.getWebhookClient() != null) {
+                    RepUtils.getWebhookClient().send(
+                        new WebhookEmbedBuilder()
+                            .setColor(amount > 0 ? Formatting.GREEN.getColorValue() : Formatting.RED.getColorValue())
+                            .setTitle(new WebhookEmbed.EmbedTitle(
+                                ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + other.getName().getString(),
+                                null
+                            ))
+                            .setDescription(reason)
+                            .setTimestamp(Instant.now())
+                            .build()
+                    );
+                }
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
                     MutableText text = new LiteralText("Your reputation was upvoted!");
                     if (RepUtils.getConfig().isShowReason()) {

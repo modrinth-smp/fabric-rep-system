@@ -22,7 +22,10 @@ public class FabricRepSystem implements ModInitializer {
             RepUtils.readConfig();
         });
 
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> RepUtils.writeConfig());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            RepUtils.closeWebhookClient();
+            RepUtils.writeConfig();
+        });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             UUID uuid = handler.getPlayer().getUuid();

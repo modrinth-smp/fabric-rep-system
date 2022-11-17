@@ -1,33 +1,44 @@
 package io.github.modrinthsmp.fabricrepsystem;
 
+import org.jetbrains.annotations.Nullable;
 import org.quiltmc.json5.JsonReader;
 import org.quiltmc.json5.JsonToken;
 import org.quiltmc.json5.JsonWriter;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public final class ReputationConfig {
     private long cooldown = 24 * 60 * 60;
+    @Nullable
     private Integer minPvPRep = null;
+    @Nullable
     private Integer minSpawnBuildingRep = null;
+    @Nullable
     private Integer maxWantedRep = null;
     private boolean votingReasonRequired = true;
     private boolean showReason = false;
     private boolean upvoteNotifications = false;
     private boolean downvoteNotifications = false;
+    @Nullable
+    private URL discordWebhookUrl = null;
 
     public long getCooldown() {
         return cooldown;
     }
 
+    @Nullable
     public Integer getMinPvPRep() {
         return minPvPRep;
     }
 
+    @Nullable
     public Integer getMinSpawnBuildingRep() {
         return minSpawnBuildingRep;
     }
 
+    @Nullable
     public Integer getMaxWantedRep() {
         return maxWantedRep;
     }
@@ -46,6 +57,11 @@ public final class ReputationConfig {
 
     public boolean isDownvoteNotifications() {
         return downvoteNotifications;
+    }
+
+    @Nullable
+    public URL getDiscordWebhookUrl() {
+        return discordWebhookUrl;
     }
 
     public void writeConfig(JsonWriter writer) throws IOException {
@@ -85,6 +101,9 @@ public final class ReputationConfig {
 
             writer.comment("Notify the player when they get downvoted.");
             writer.name("downvoteNotifications").value(downvoteNotifications);
+
+            writer.comment("Webhook to log upvotes and downvotes.");
+            writer.name("discordWebhookUrl").value(discordWebhookUrl != null ? discordWebhookUrl.toExternalForm() : null);
         } writer.endObject();
     }
 
@@ -122,7 +141,20 @@ public final class ReputationConfig {
                 case "showReason" -> showReason = reader.nextBoolean();
                 case "upvoteNotifications" -> upvoteNotifications = reader.nextBoolean();
                 case "downvoteNotifications" -> downvoteNotifications = reader.nextBoolean();
-                default -> FabricRepSystem.LOGGER.warn("Unknown config key: " + key);
+                case "discordWebhookUrl" -> {
+                    if (reader.peek() == JsonToken.NULL) {
+                        reader.nextNull();
+                        discordWebhookUrl = null;
+                    } else {
+                        final String url = reader.nextString();
+                        try {
+                            discordWebhookUrl = new URL(url);
+                        } catch (MalformedURLException e) {
+                            FabricRepSystem.LOGGER.warn("Invalid URL: {}. {}", url, e.getMessage());
+                        }
+                    }
+                }
+                default -> FabricRepSystem.LOGGER.warn("Unknown config key: {}", key);
             }
         }
         reader.endObject();
