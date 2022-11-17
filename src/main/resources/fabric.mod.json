@@ -3,8 +3,11 @@
   "id": "fabric-rep-system",
   "version": "${version}",
   "name": "Fabric Reputation System",
-  "description": "",
-  "authors": [],
+  "description": "This is a mod to manage player reputation on a server.",
+  "authors": [
+    "Gaming32i",
+    "stygigoth"
+  ],
   "contact": {
     "repo": "https://github.com/modrinth-smp/fabric-rep-system"
   },
