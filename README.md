@@ -53,3 +53,29 @@ Here's the mod's default config file:
 	discordWebhookUrl: null
 }
 ```
+
+## Querying reputation from a mod
+
+First, depend on the mod in your `build.gradle`:
+
+```groovy
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
+}
+
+dependencies {
+    modImplementation "maven.modrinth:fabric-rep-system:1.0.0"
+}
+```
+
+Then, you can query the API for reputation data using `RepUtils.getPlayerReputation(playerUuid)`.
