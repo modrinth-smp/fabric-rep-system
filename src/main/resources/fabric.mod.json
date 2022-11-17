@@ -3,7 +3,7 @@
   "id": "fabric-rep-system",
   "version": "${version}",
   "name": "Fabric Reputation System",
-  "description": "This is a mod to manage player reputation on a server.",
+  "description": "This is a mod to manage player reputation on a server. Mean players (e.g. griefers and thieves) can get downvoted, while nice players can get upvoted. You can configure some actions to happen based on a player's reputation. You can configure even more actions using a datapack.",
   "authors": [
     "Gaming32i",
     "stygigoth"
