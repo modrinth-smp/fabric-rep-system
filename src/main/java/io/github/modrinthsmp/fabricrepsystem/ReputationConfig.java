@@ -93,7 +93,7 @@ public final class ReputationConfig {
             writer.comment("Require a reason to vote on a player.");
             writer.name("votingReasonRequired").value(votingReasonRequired);
 
-            writer.comment("Show the upvote/downvote reason in notification.");
+            writer.comment("Show the upvote/downvote reason in notifications.");
             writer.name("showReason").value(showReason);
 
             writer.comment("Notify the player when they get upvoted.");
