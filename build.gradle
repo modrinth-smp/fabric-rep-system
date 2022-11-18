@@ -24,9 +24,11 @@ dependencies {
 
     implementation "club.minnced:discord-webhooks:0.8.2"
     include "club.minnced:discord-webhooks:0.8.2"
-    include "org.json:json"
-    include "com.squareup.okio:okio-jvm"
-    include "com.squareup.okhttp3:okhttp"
+    //noinspection GradlePackageUpdate
+    include "org.json:json:20210307"
+    //noinspection GradlePackageUpdate
+    include "com.squareup.okio:okio-jvm:3.0.0"
+    include "com.squareup.okhttp3:okhttp:4.10.0"
 
     implementation "org.quiltmc:quilt-json5:1.0.2"
     include "org.quiltmc:quilt-json5:1.0.2"
