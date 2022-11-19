@@ -2,7 +2,7 @@ package io.github.modrinthsmp.fabricrepsystem;
 
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import org.slf4j.Logger;
@@ -40,6 +40,6 @@ public class FabricRepSystem implements ModInitializer {
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> RepUtils.writeRep(server));
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> RepCommand.register(dispatcher));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> RepCommand.register(dispatcher));
     }
 }

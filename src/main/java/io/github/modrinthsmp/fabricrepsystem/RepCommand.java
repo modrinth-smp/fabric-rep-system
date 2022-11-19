@@ -13,12 +13,10 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.GameProfileArgumentType;
-import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -40,7 +38,7 @@ public final class RepCommand {
         Text.of("Cannot vote on yourself.")
     );
     private static final Dynamic2CommandExceptionType VOTE_FOR_AGAIN_EXCEPTION = new Dynamic2CommandExceptionType(
-        (player, whenInMillis) -> new LiteralText(
+        (player, whenInMillis) -> Text.literal(
             "You can vote for " + player + " again " +
                 Util.formatTimeDifference((long)whenInMillis)
         )
@@ -58,7 +56,7 @@ public final class RepCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(LiteralArgumentBuilder.<ServerCommandSource>literal("rep")
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("view")
-                .executes(ctx -> repView(ctx, List.of(ctx.getSource().getPlayer().getGameProfile())))
+                .executes(ctx -> repView(ctx, List.of(ctx.getSource().getPlayerOrThrow().getGameProfile())))
                 .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
                     .executes(ctx -> repView(ctx, getProfileArgument(ctx, "player")))
                 )
@@ -66,7 +64,7 @@ public final class RepCommand {
             .then(LiteralArgumentBuilder.<ServerCommandSource>literal("set")
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(RequiredArgumentBuilder.<ServerCommandSource, Integer>argument("rep", integer())
-                    .executes(ctx -> repSet(ctx, List.of(ctx.getSource().getPlayer().getGameProfile())))
+                    .executes(ctx -> repSet(ctx, List.of(ctx.getSource().getPlayerOrThrow().getGameProfile())))
                 )
                 .then(RequiredArgumentBuilder.<ServerCommandSource, GameProfileArgumentType.GameProfileArgument>argument("player", gameProfile())
                     .then(RequiredArgumentBuilder.<ServerCommandSource, Integer>argument("rep", integer())
@@ -195,33 +193,27 @@ public final class RepCommand {
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {
                 if (amount > 0 && RepUtils.getConfig().isUpvoteNotifications()) {
-                    MutableText text = new LiteralText("Your reputation was upvoted!");
+                    MutableText text = Text.literal("Your reputation was upvoted!");
                     if (RepUtils.getConfig().isShowReason()) {
                         text = text.append("Reason: " + (reason == null ? "None Provided" : reason));
                     }
-                    other.sendSystemMessage(text, net.minecraft.util.Util.NIL_UUID);
-                    other.networkHandler.sendPacket(new PlaySoundS2CPacket(
+                    other.sendMessage(text);
+                    other.playSound(
                         SoundEvents.ENTITY_PLAYER_LEVELUP,
                         SoundCategory.MASTER,
-                        other.getX(),
-                        other.getY(),
-                        other.getZ(),
                         0.5f, 1f
-                    ));
+                    );
                 } else if (amount < 0 && RepUtils.getConfig().isDownvoteNotifications()) {
-                    MutableText text = new LiteralText("Your reputation was downvoted.");
+                    MutableText text = Text.literal("Your reputation was downvoted.");
                     if (RepUtils.getConfig().isShowReason()) {
                         text = text.append("Reason: " + (reason == null ? "None Provided" : reason));
                     }
-                    other.sendSystemMessage(text, net.minecraft.util.Util.NIL_UUID);
-                    other.networkHandler.sendPacket(new PlaySoundS2CPacket(
+                    other.sendMessage(text);
+                    other.playSound(
                         SoundEvents.ENTITY_VILLAGER_NO,
                         SoundCategory.MASTER,
-                        other.getX(),
-                        other.getY(),
-                        other.getZ(),
-                        1f, 1f
-                    ));
+                        1, 1f
+                    );
                 }
             }
         }
