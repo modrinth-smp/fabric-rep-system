@@ -22,7 +22,9 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.Vec3d;
 
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -46,11 +48,14 @@ public final class RepCommand {
         )
     );
     private static final DynamicCommandExceptionType LOOK_FOR_UNWANTED_EXCEPTION = new DynamicCommandExceptionType(
-        player -> ((ServerPlayerEntity)player).getDisplayName().copy().append(" is currently not wanted")
+        player -> new LiteralText("")
+            .append(((ServerPlayerEntity)player).getDisplayName())
+            .append(" is currently not wanted")
     );
     private static final SimpleCommandExceptionType REASON_REQUIRED_EXCEPTION = new SimpleCommandExceptionType(
         Text.of("A reason is required, but you didn't specify one.")
     );
+    private static final DecimalFormat COORD_FORMAT = new DecimalFormat("#.#");
 
     private RepCommand() {
     }
@@ -111,8 +116,16 @@ public final class RepCommand {
             throw NOT_ALLOWED_EXCEPTION.create();
         if (FabricRepSystem.reputation.get(player.getUuid()).getReputation() > RepUtils.getConfig().getMaxWantedRep())
             throw LOOK_FOR_UNWANTED_EXCEPTION.create(player);
+        final Vec3d pos = player.getPos();
         ctx.getSource().sendFeedback(
-                Text.of(player.getPos().toString()), false
+            new LiteralText("")
+                .append(player.getDisplayName())
+                .append(
+                    " is at X: " + COORD_FORMAT.format(pos.x) +
+                        " Y: " + COORD_FORMAT.format(pos.y) +
+                        " Z: " + COORD_FORMAT.format(pos.z)
+                ),
+            false
         );
         return 0;
     }
