@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ServerPlayerEntityMixin {
     @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
     public void fabricRepSystem$shouldDamagePlayer(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if (RepUtils.getConfig().getMinPvPRep() == null) return; // No check
         if (source.getAttacker() instanceof PlayerEntity && RepUtils.getPlayerReputation(source.getAttacker().getUuid()).getReputation() < RepUtils.getConfig().getMinPvPRep()) {
             cir.setReturnValue(false);
         }

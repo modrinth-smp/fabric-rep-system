@@ -46,7 +46,7 @@ public final class RepCommand {
         )
     );
     private static final DynamicCommandExceptionType LOOK_FOR_UNWANTED_EXCEPTION = new DynamicCommandExceptionType(
-        player -> new LiteralText("")
+        player -> Text.empty()
             .append(((ServerPlayerEntity)player).getDisplayName())
             .append(" is currently not wanted")
     );
@@ -116,7 +116,7 @@ public final class RepCommand {
             throw LOOK_FOR_UNWANTED_EXCEPTION.create(player);
         final Vec3d pos = player.getPos();
         ctx.getSource().sendFeedback(
-            new LiteralText("")
+            Text.empty()
                 .append(player.getDisplayName())
                 .append(
                     " is at X: " + COORD_FORMAT.format(pos.x) +
