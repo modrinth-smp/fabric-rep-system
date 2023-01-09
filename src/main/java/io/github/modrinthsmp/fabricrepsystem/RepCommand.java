@@ -48,7 +48,7 @@ public final class RepCommand {
     private static final DynamicCommandExceptionType LOOK_FOR_UNWANTED_EXCEPTION = new DynamicCommandExceptionType(
         player -> Text.empty()
             .append(((ServerPlayerEntity)player).getDisplayName())
-            .append(" is currently not wanted")
+            .append(" is not currently wanted")
     );
     private static final SimpleCommandExceptionType REASON_REQUIRED_EXCEPTION = new SimpleCommandExceptionType(
         Text.of("A reason is required, but you didn't specify one.")
