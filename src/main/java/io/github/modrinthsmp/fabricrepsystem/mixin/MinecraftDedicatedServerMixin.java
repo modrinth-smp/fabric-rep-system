@@ -14,7 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MinecraftDedicatedServerMixin {
     @Inject(method = "isSpawnProtected", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;getSpawnPos()Lnet/minecraft/util/math/BlockPos;"), cancellable = true)
     public void fabricRepSystem$isSpawnProtected(ServerWorld world, BlockPos pos, PlayerEntity player, CallbackInfoReturnable<Boolean> cir) {
-        if (RepUtils.getConfig().getMinSpawnBuildingRep() != null && RepUtils.getPlayerReputation(player.getUuid()).getReputation() >= RepUtils.getConfig().getMinSpawnBuildingRep()) {
+        if (
+            RepUtils.getConfig().getMinSpawnBuildingRep() != null &&
+                RepUtils.getPlayerReputation(player.getUuid()).getReputation() >= RepUtils.getConfig().getMinSpawnBuildingRep()
+        ) {
             cir.setReturnValue(false);
         }
     }

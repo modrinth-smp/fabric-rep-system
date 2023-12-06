@@ -1,13 +1,13 @@
 package io.github.modrinthsmp.fabricrepsystem;
 
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.json5.JsonReader;
-import org.quiltmc.json5.JsonToken;
-import org.quiltmc.json5.JsonWriter;
+import org.quiltmc.parsers.json.JsonReader;
+import org.quiltmc.parsers.json.JsonToken;
+import org.quiltmc.parsers.json.JsonWriter;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public final class ReputationConfig {
     private long cooldown = 24 * 60 * 60;
@@ -26,7 +26,7 @@ public final class ReputationConfig {
     private boolean upvoteNotifications = false;
     private boolean downvoteNotifications = false;
     @Nullable
-    private URL discordWebhookUrl = null;
+    private URI discordWebhookUrl = null;
 
     public long getCooldown() {
         return cooldown;
@@ -74,7 +74,7 @@ public final class ReputationConfig {
     }
 
     @Nullable
-    public URL getDiscordWebhookUrl() {
+    public URI getDiscordWebhookUrl() {
         return discordWebhookUrl;
     }
 
@@ -124,7 +124,7 @@ public final class ReputationConfig {
             writer.name("downvoteNotifications").value(downvoteNotifications);
 
             writer.comment("Webhook to log upvotes and downvotes.");
-            writer.name("discordWebhookUrl").value(discordWebhookUrl != null ? discordWebhookUrl.toExternalForm() : null);
+            writer.name("discordWebhookUrl").value(discordWebhookUrl != null ? discordWebhookUrl.toString() : null);
         } writer.endObject();
     }
 
@@ -150,9 +150,9 @@ public final class ReputationConfig {
                     } else {
                         final String url = reader.nextString();
                         try {
-                            discordWebhookUrl = new URL(url);
-                        } catch (MalformedURLException e) {
-                            FabricRepSystem.LOGGER.warn("Invalid URL: {}. {}", url, e.getMessage());
+                            discordWebhookUrl = new URI(url);
+                        } catch (URISyntaxException e) {
+                            FabricRepSystem.LOGGER.warn("Invalid URI: {}", e.getMessage());
                         }
                     }
                 }

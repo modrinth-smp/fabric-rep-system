@@ -1,7 +1,5 @@
 package io.github.modrinthsmp.fabricrepsystem;
 
-import club.minnced.discord.webhook.send.WebhookEmbed;
-import club.minnced.discord.webhook.send.WebhookEmbedBuilder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -21,7 +19,13 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
+import org.quiltmc.parsers.json.JsonWriter;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.Collection;
@@ -53,7 +57,7 @@ public final class RepCommand {
     private static final SimpleCommandExceptionType REASON_REQUIRED_EXCEPTION = new SimpleCommandExceptionType(
         Text.of("A reason is required, but you didn't specify one.")
     );
-    private static final DecimalFormat COORD_FORMAT = new DecimalFormat("#.#");
+    private static final DecimalFormat COORD_FORMAT = new DecimalFormat("0.0");
 
     private RepCommand() {
     }
@@ -186,22 +190,57 @@ public final class RepCommand {
                 false
             );
             FabricRepSystem.LOGGER.info(ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + profile.getName() + " with reason: " + (reason == null ? "None Provided" : reason));
-            if (RepUtils.getWebhookClient() != null) {
-                RepUtils.getWebhookClient().send(
-                    new WebhookEmbedBuilder()
-                        .setColor(amount > 0 ? Formatting.GREEN.getColorValue() : Formatting.RED.getColorValue())
-                        .setTitle(new WebhookEmbed.EmbedTitle(
-                            ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + profile.getName(),
-                            null
-                        ))
-                        .setDescription(reason)
-                        .setFooter(new WebhookEmbed.EmbedFooter(
-                            profile.getName() + "'s reputation is now " + repData.getReputation(),
-                            "https://crafatar.com/renders/head/" + profile.getId() + "?overlay=true"
-                        ))
-                        .setTimestamp(Instant.now())
-                        .build()
-                );
+            if (RepUtils.getConfig().getDiscordWebhookUrl() != null) {
+                final StringWriter stringWriter = new StringWriter();
+                try (JsonWriter writer = JsonWriter.json(stringWriter)) {
+                    writer.beginObject();
+                    {
+                        writer.name("embeds").beginArray();
+                        {
+                            writer.beginObject();
+                            {
+                                writer.name("title").value(
+                                    ctx.getSource().getName() + (amount > 0 ? " upvoted " : " downvoted ") + profile.getName()
+                                );
+                                writer.name("description").value(reason);
+                                writer.name("timestamp").value(Instant.now().toString());
+                                writer.name("color").value(
+                                    amount > 0 ? Formatting.GREEN.getColorValue() : Formatting.RED.getColorValue()
+                                );
+                                writer.name("footer").beginObject();
+                                {
+                                    writer.name("text").value(
+                                        profile.getName() + "'s reputation is now " + repData.getReputation()
+                                    );
+                                    writer.name("icon_url").value(
+                                        "https://crafatar.com/renders/head/" + profile.getId() + "?overlay=true"
+                                    );
+                                }
+                                writer.endObject();
+                            }
+                            writer.endObject();
+                        }
+                        writer.endArray();
+                    }
+                    writer.endObject();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                FabricRepSystem.HTTP.sendAsync(
+                    HttpRequest.newBuilder(RepUtils.getConfig().getDiscordWebhookUrl())
+                        .header("User-Agent", FabricRepSystem.USER_AGENT)
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(stringWriter.toString()))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString()
+                ).thenAccept(response -> {
+                    if (response.statusCode() >= 400) {
+                        FabricRepSystem.LOGGER.error("Failed to send Discord webhook (HTTP {}): {}", response.statusCode(), response.body());
+                    }
+                }).exceptionally(t -> {
+                    FabricRepSystem.LOGGER.error("Failed to send Discord webhook", t);
+                    return null;
+                });
             }
             final ServerPlayerEntity other = ctx.getSource().getServer().getPlayerManager().getPlayer(profile.getId());
             if (other != null) {

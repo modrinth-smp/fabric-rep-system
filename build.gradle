@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.0.12'
+    id 'fabric-loom' version '1.4.+'
     id 'maven-publish'
 }
 
@@ -22,16 +22,7 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation "club.minnced:discord-webhooks:0.8.2"
-    include "club.minnced:discord-webhooks:0.8.2"
-    //noinspection GradlePackageUpdate
-    include "org.json:json:20210307"
-    //noinspection GradlePackageUpdate
-    include "com.squareup.okio:okio-jvm:3.0.0"
-    include "com.squareup.okhttp3:okhttp:4.10.0"
-
-    implementation "org.quiltmc:quilt-json5:1.0.2"
-    include "org.quiltmc:quilt-json5:1.0.2"
+    include(implementation("org.quiltmc.parsers:json:0.2.1"))
 }
 
 processResources {
