@@ -106,7 +106,7 @@ public final class RepCommand {
                 .requires(source -> source.hasPermission(2))
                 .executes(ctx -> {
                     RepUtils.readConfig();
-                    ctx.getSource().sendSuccess(Component.literal("Successfully reloaded reputation config"), true);
+                    ctx.getSource().sendSuccess(() -> Component.literal("Successfully reloaded reputation config"), true);
                     return 1;
                 })
             )
@@ -127,7 +127,7 @@ public final class RepCommand {
         }
         final Vec3 pos = player.position();
         ctx.getSource().sendSuccess(
-            Component.empty()
+            () -> Component.empty()
                 .append(player.getDisplayName())
                 .append(
                     " is at X: " + COORD_FORMAT.format(pos.x) +
@@ -145,7 +145,7 @@ public final class RepCommand {
             final ReputationData repData = FabricRepSystem.reputation.get(profile.getId());
             final int thisRep = repData == null ? 0 : repData.getReputation();
             ctx.getSource().sendSuccess(
-                Component.literal(profile.getName() + " has " + thisRep + " reputation."),
+                () -> Component.literal(profile.getName() + " has " + thisRep + " reputation."),
                 false
             );
             rep += thisRep;
@@ -159,7 +159,7 @@ public final class RepCommand {
             final ReputationData repData = RepUtils.getPlayerReputation(profile.getId());
             repData.setReputation(rep);
             ctx.getSource().sendSuccess(
-                Component.literal("Set " + profile.getName() + "'s reputation to " + repData.getReputation()),
+                () -> Component.literal("Set " + profile.getName() + "'s reputation to " + repData.getReputation()),
                 true
             );
         }
@@ -193,7 +193,7 @@ public final class RepCommand {
             final ReputationData repData = RepUtils.getPlayerReputation(profile.getId());
             repData.addReputation(amount);
             ctx.getSource().sendSuccess(
-                Component.literal("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "!"),
+                () -> Component.literal("Voted " + profile.getName() + " reputation " + (amount > 0 ? "+" : "") + amount + "!"),
                 false
             );
             FabricRepSystem.LOGGER.info(ctx.getSource().getTextName() + (amount > 0 ? " upvoted " : " downvoted ") + profile.getName() + " with reason: " + (reason == null ? "None Provided" : reason));
