@@ -35,7 +35,7 @@ public class FabricRepSystem implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> RepUtils.writeConfig());
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            UUID uuid = handler.getPlayer().getUuid();
+            UUID uuid = handler.getPlayer().getUUID();
             if (!reputation.containsKey(uuid)) {
                 reputation.put(uuid, new ReputationData());
                 RepUtils.writeRep(server);

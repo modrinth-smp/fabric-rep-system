@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.WorldSavePath;
+import net.minecraft.world.level.storage.LevelResource;
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonWriter;
 
@@ -59,7 +59,7 @@ public final class RepUtils {
     }
 
     public static Path getReputationPath(MinecraftServer server) {
-        return server.getSavePath(WorldSavePath.ROOT).resolve("reputation.json");
+        return server.getWorldPath(LevelResource.ROOT).resolve("reputation.json");
     }
 
     public static Path getConfigPath() {
